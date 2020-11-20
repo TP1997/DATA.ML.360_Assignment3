@@ -6,7 +6,8 @@ import time
 from numpy.linalg import norm
 
 #%% Load & premodify all necessary data
-root = '/home/tuomas/Python/DATA.ML.360/Assignment2/ml-latest-small/'
+root = '/Users/mueed/Documents/GitHub/DATA.ML.360_Assignment3/ml-latest-small/'
+#root = '/home/tuomas/Python/DATA.ML.360/Assignment2/ml-latest-small/'
 
 df_movies = pd.read_csv(root+'movies.csv', usecols=['movieId', 'title'],
                         dtype={'movieId':'int32', 'title':'str'})
@@ -239,9 +240,35 @@ for tcr, tci in zip(top_common_ratings, top_common_idxs):
 
 print()
 
+#%% Single user Satisfcation
+
+def topNmovies(uid,N):
+    top_filter = get_n_largest_idx(pred_ratings, N)
+    movie_idxs_top = movie_idxs[top_filter]
+    return(movie_idxs_top)
+
+def userListSat(uid):
+    arr = topNmovies(uid,20)
+    ratings_sum = 0
+    for i in range(20):
+        ratings_sum = predict_rating(uid,arr[i]) + ratings_sum
+    return(ratings_sum)
+
+def groupListSat(uid):
+    arr = topNmovies(uid,20)
+    ratings_sum = 0
+    for i in range(20):
+        ratings_sum = group_common_ratings[uid][arr[i]] + ratings_sum
+    return(ratings_sum)
+
+def userSatisfaction(uid):
+    satisfaction = groupListSat(uid)/userListSat(uid)
+    return(satisfaction)
+
+#%% Overall user satisfaction
     
-
-
+def overallUserSatisfaction(uid):
+    return userSatisfaction(uid)/20
 
 
 
