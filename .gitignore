@@ -1,0 +1,7 @@
+# Skip these
+*.sandbox.py
+tst?.py
+192844.192905.pdf
+421425.pdf
+*.odt
+lecture08_sequentialrecs.pdf
