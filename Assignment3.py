@@ -176,16 +176,29 @@ def calc_weights2(sat_scores):
     weights /= np.sum(weights)   
     return weights
 
-def weighted_avgs(sat_scores, group_common_ratings):
+def weighted_avgs(sat_scores, group_common_ratings_current):
     # Transform weight array to column vector
     weight_vec = calc_weights1(sat_scores)
     print('Weight vec : {}'.format(weight_vec))
     # Calculate group score for each item
-    group_ratings = np.matmul(weight_vec, group_common_ratings)
+    group_ratings = np.matmul(weight_vec, group_common_ratings_current)
     return group_ratings
 
-def weighted_avgs2(sat_scores, group_common_ratings):
-    return group_common_ratings.mean(axis=0)
+def weighted_avgs2(sat_scores, group_common_ratings_current):
+    return group_common_ratings_current.mean(axis=0)
+
+# Average + least misery method
+def aggerate(group_common_ratings_current):
+    gcrc = group_common_ratings_current.astype('float')
+    # Calculate scores using group averages
+    group_means = gcrc.mean(axis=0)
+    # Calculate scores using least misery
+    group_minimums = np.min(np.ma.masked_array(gcrc, np.isnan(gcrc)), axis=0).data
+    group_minimums[group_minimums==1.e+20] = -1.e+5
+    
+    # Take an average of both methods
+    group_ratings = (group_means + group_minimums) * 0.5 
+    return group_ratings
 
 def group_list_sat(user, Grj):
     user_ratings = Grj[user]      
@@ -213,13 +226,22 @@ group_common_movie_idxs_current = group_common_movie_idxs
 group_pred_ratings_current = group_pred_ratings
 iterations = 3
 N = 3
-#%%
+# Select which group aggeration method to use
+weighed_avg = False
+method_name = 'Average & Least misery'
+if(weighed_avg):
+    method_name = 'Weighted group average'
+#%% Both methods implemented, the weighted average and the average + least misery
 for j in range(iterations):
     print('Iteration {}'.format(j))
     # 1. Get a list of recommendations for group.
     # 1.1 Get recommendations for group using some aggeration method
     sat_scores_prev = group_statisfactions_iter[len(group_statisfactions_iter)-1]
-    group_ratings = weighted_avgs(sat_scores_prev, group_common_ratings_current)
+    if(weighed_avg):
+        group_ratings = weighted_avgs(sat_scores_prev, group_common_ratings_current)
+    else:
+        group_ratings = aggerate(group_common_ratings_current)
+    
     # 1.2 Get top items
     top_mask = get_n_largest_idx(group_ratings, N)
     top_common_ratings = group_ratings[top_mask]
@@ -257,7 +279,7 @@ for j in range(iterations):
 #%% Print suggested items for a group in each iteration
 
 # Print the results
-print('Sequential group recommendations using weighted group average.')
+print('Sequential group recommendations using {}.'.format(method_name))
 print('List of {} most relevant movies in {} iterations for user group {}:'.format(N,iterations,user_group+1))
 print('------------------------------------------------------')
 for i in range(iterations):
@@ -271,4 +293,16 @@ for i in range(iterations):
         print('(Id : {}), {}\n'.format(movie_id, movie_name))
     
     print()
-        
+
+
+
+
+
+
+
+
+
+
+
+
+
